@@ -11,21 +11,23 @@
 -- Napoveda: Pouzijte konstrukci IN (nebo EXISTS) s poddotazem nad
 --           tabulkou film_actor.
 -- ============================================================
+
 /*
-SELECT film_id, title 
-FROM film WHERE film_id IN
- (SELECT film_id
+SELECT film_id, title
+FROM film F 
+WHERE film_id IN (
+    SELECT film_id
     FROM film_actor
     WHERE actor_id = 1
 );
 
-SELECT film_id, title 
-FROM film 
-WHERE EXISTS
- (SELECT film_id
+SELECT film_id, title
+FROM film F 
+WHERE EXISTS(
+    SELECT film_id
     FROM film_actor
-    WHERE actor_id = 1 AND film_actor.film_id = film.film_id
-);
+    WHERE actor_id = 1 AND F.film_id=film_actor.film_id
+)
 */
 
 
@@ -39,9 +41,6 @@ WHERE EXISTS
 
 
 
-
-
--- `
 
 
 
@@ -66,19 +65,14 @@ WHERE EXISTS
 --           mozna staci jen poddotaz nad film_actor.
 -- ============================================================
 /*
-SELECT film_id
-FROM film WHERE film_id IN
- (SELECT film_id
+    SELECT film_id
     FROM film_actor
     WHERE actor_id = 1
-);
-
-
-SELECT film_id
-FROM film_actor
-WHERE actor_id = 1
-
 */
+
+
+
+
 
 
 
@@ -109,25 +103,38 @@ WHERE actor_id = 1
 -- Napoveda: Jde o prunik dvou mnozin filmu - zkuste dvakrat pouzit
 --           IN spojene pres AND.
 -- ============================================================
+/*
 
-
-/* SELECT film_id, title 
-FROM film WHERE film_id IN
- (SELECT film_id
+SELECT film_id, title
+FROM film F 
+WHERE film_id IN (
+    SELECT film_id
     FROM film_actor
     WHERE actor_id = 1
-) AND film_id IN
-(
+) AND film_id IN (
     SELECT film_id
     FROM film_actor
     WHERE actor_id = 10
-) */
-/*
-SELECT DISTINCT F.film_id, title
+)
+;
+
+SELECT film_id, title
 FROM film F 
-JOIN film_actor FA ON F.film_id=FA.film_id
-JOIN film_actor FA2 ON F.film_id=FA2.film_id
-WHERE FA.actor_id = 1 AND FA2.actor_id = 10 ;
+WHERE EXISTS(
+    SELECT film_id
+    FROM film_actor
+    WHERE actor_id = 1 AND F.film_id=film_actor.film_id
+) AND EXISTS(
+    SELECT film_id
+    FROM film_actor
+    WHERE actor_id = 10 AND f.film_id=film_actor.film_id
+);
+
+SELECT F.film_id, F.title, FA.actor_id as a1,FA2.actor_id as a2
+FROM film F 
+JOIN film_actor FA ON  F.film_id=FA.film_id
+JOIN film_actor FA2 ON  F.film_id=FA2.film_id
+WHERE FA.actor_id = 1 AND FA2.actor_id=10
 
 */
 
@@ -162,25 +169,31 @@ WHERE FA.actor_id = 1 AND FA2.actor_id = 10 ;
 -- Napoveda: Jde o sjednoceni dvou mnozin - zkuste IN s podminkou OR
 --           uvnitr poddotazu, nebo JOIN s DISTINCT.
 -- ============================================================
+
 /*
 
-SELECT film_id, title 
-FROM film WHERE film_id IN
- (SELECT film_id
-    FROM film_actor
-    WHERE actor_id = 1 OR actor_id = 10
-
-) 
-
-SELECT DISTINCT F.film_id, title
+SELECT film_id, title
 FROM film F 
-JOIN film_actor FA ON F.film_id=FA.film_id
-WHERE FA.actor_id = 1 OR FA.actor_id = 10 ;
+WHERE EXISTS(
+    SELECT film_id
+    FROM film_actor
+    WHERE actor_id = 1 AND F.film_id=film_actor.film_id
+) OR EXISTS(
+    SELECT film_id
+    FROM film_actor
+    WHERE actor_id = 10 AND f.film_id=film_actor.film_id
+);
 
 
-
+SELECT DISTINCT F.film_id, F.title
+FROM film F 
+JOIN film_actor FA
+ON F.film_id=FA.film_id
+WHERE actor_id IN (1, 10) 
+ORDER BY 1;
 
 */
+
 
 
 
@@ -211,20 +224,26 @@ WHERE FA.actor_id = 1 OR FA.actor_id = 10 ;
 --           pouzijte NOT IN nebo NOT EXISTS.
 -- ============================================================
 
-
-
-
-/*
-
-SELECT film_id, title 
-FROM film WHERE film_id not IN
- (SELECT film_id
+/* SELECT film_id, title
+FROM film F 
+WHERE film_id NOT IN (
+    SELECT film_id
     FROM film_actor
     WHERE actor_id = 1
+)
 
-) 
+SELECT film_id, title
+FROM film F 
+WHERE NOT EXISTS(
+    SELECT film_id
+    FROM film_actor
+    WHERE actor_id = 1 AND F.film_id=film_actor.film_id
+)
+ */
 
-*/
+
+
+
 
 
 
@@ -253,25 +272,30 @@ FROM film WHERE film_id not IN
 -- Napoveda: Stejny princip jako uloha 3, ale herce musite dohledat
 --           podle jmena pres JOIN s tabulkou actor.
 -- ============================================================
+
 /*
-SELECT film_id, title 
-FROM film WHERE film_id IN
- (SELECT film_id -- actor.first_name, actor.last_name
-    FROM film_actor
-   JOIN actor ON actor.actor_id = film_actor.actor_id
-   Where actor.first_name = 'PENELOPE' AND actor.last_name = 'GUINESS'
- )
- AND film_id IN
-   (SELECT film_id -- actor.first_name, actor.last_name
-    FROM film_actor
-   JOIN actor ON actor.actor_id = film_actor.actor_id
-   Where actor.first_name = 'CHRISTIAN' AND actor.last_name = 'GABLE'
-   
-   
-   );
-   
+
+SELECT film_id, title
+FROM film F 
+where EXISTS(
+    SELECT first_name, last_name
+    from actor  
+    join film_actor FA on actor.actor_id = FA.actor_id
+    where first_name = 'PENELOPE' AND last_name = 'GUINESS' AND
+    F.film_id = FA.film_id
+) AND
+EXISTS(
+    SELECT first_name, last_name
+    from actor  
+    join film_actor FA on actor.actor_id = FA.actor_id
+    where first_name = 'CHRISTIAN' AND last_name = 'GABLE' AND
+    F.film_id = FA.film_id
+)
+
 */
-     
+
+
+
 
 
 
@@ -307,21 +331,18 @@ FROM film WHERE film_id IN
 -- Napoveda: Potrebujete porovnat tabulku film samu se sebou -
 --           pouzijte dva aliasy a EXISTS (nebo IN).
 -- ============================================================
-/*
 
-SELECT title
-FROM film F1
+
+/*
+SELECT film_id, title
+FROM film F 
 WHERE EXISTS(
-    SELECT length FROM film F2
-    WHERE F1.length = F2.length
-        AND F1.film_id != F2.film_id
+    SELECT 1
+    from film F2
+    WHERE F2.length = F.length
+    AND F2.film_id != F.film_id
 )
 */
-
-
-
-
-
 
 
 
@@ -356,7 +377,16 @@ WHERE EXISTS(
 -- ============================================================
 
 
-
+SELECT film_id, title
+FROM film F 
+WHERE F.length < ALL
+(
+SELECT length
+FROM film F
+JOIN film_actor FA ON F.film_id = FA.film_id
+JOIN actor A ON FA.actor_id = A.actor_id
+WHERE A.first_name = 'BURT'  AND A.last_name = 'POSEY'
+);
 
 
 

@@ -13,11 +13,15 @@
 --           skalarni poddotazy v SELECT.
 -- ============================================================
 
+/*
 
+SELECT film_id, title,
+(SELECT count(actor_id) from film_actor where film.film_id = film_id)
+ as pocet_hercu,
+(SELECT count(category_id) from film_category where film.film_id = film_id) as pocet_kategorir
+FROM film;
 
-
-
-
+*/
 
 
 
@@ -44,16 +48,31 @@
 
 -- ============================================================
 -- Uloha 2
--- Zadani: Pro kazdeho zakaznika vypiste pocet vypujcek trvajicich
---         mene nez 5 dni a pocet vypujcek trvajicich mene nez
+-- Zadani: Pro kazdeho zakaznika vypiste pocet vypujcek delších
+--         mene nez 5 dni a pocet vypujcek delších mene nez
 --         7 dni.
 -- Napoveda: Pouzijte dva nezavisle korelovane poddotazy v SELECT.
 --           Podminku na dobu trvani dejte dovnitr poddotazu, ne
 --           do vnejsiho WHERE.
 -- ============================================================
+/*
+SELECT customer_id, 
+(
+    SELECT  count(1) as pocet
+    FROM rental
+    WHERE EXTRACT(DAY FROM COALESCE(return_date,NOW()) - rental_date) < 5 AND customer_id = customer.customer_id
+) as mene_nez5,
+(
+    SELECT  count(1) as pocet
+    FROM rental
+    WHERE EXTRACT(DAY FROM COALESCE(return_date,NOW()) - rental_date) < 7 AND customer_id = customer.customer_id) as mene_nez7
+FROM customer;
 
+SELECT  count(1) as pocet
+FROM rental
+WHERE EXTRACT(DAY FROM COALESCE(return_date,NOW()) - rental_date) < 5;
 
-
+*/
 
 
 
@@ -241,6 +260,46 @@
 --           nestaci.
 -- ============================================================
 
+
+
+SELECT film_id, title, rating length
+FROM film as F 
+WHERE length = (SELECT MAX(length) FROM film where F.rating = rating)
+ORDER BY 3;
+
+
+
+
+SELECT customer_id, SUM(amount)
+FROM payment
+GROUP BY customer_id
+HAVING SUM(amount) =
+(
+    SELECT MAX(sumofa) FROM
+    (
+        SELECT customer_id, SUM(amount) sumofa
+        FROM payment
+        GROUP BY customer_id
+    )
+)
+;
+
+SELECT *
+FROM
+(
+SELECT customer_id, SUM(amount) sum
+FROM payment
+GROUP BY customer_id
+) T
+WHERE T.sum > 200;
+
+
+
+
+
+
+
+;
 
 
 

@@ -13,16 +13,20 @@
 --           skalarni poddotazy v SELECT.
 -- ============================================================
 
-
 SELECT 
- fid,
+ film_id,
  title,
- (SELECT count(1) FROM film_actor WHERE fid = film_actor.film_id) as pocet_hercu,
- (SELECT count(1) FROM film_category WHERE fid = film_id) as pocet_kategorii
-FROM 
-(SELECT film_id as fid, title 
- FROM film)
-film
+ (
+    SELECT count(1)
+    FROM film_actor
+    WHERE film_actor.film_id = film.film_id
+ ) as pocet_hercu,
+(
+    SELECT count(1)
+    FROM film_category
+    WHERE film_category.film_id = film.film_id
+ )  as pocet_kategorii
+FROM film;
 
 
 
@@ -59,36 +63,33 @@ film
 --           Podminku na dobu trvani dejte dovnitr poddotazu, ne
 --           do vnejsiho WHERE.
 -- ============================================================
-/*
+
+
+
+SELECT EXTRACT(DAY FROM (COALESCE(return_date,NOW()) - rental_date))
+FROM rental
+ORDER BY 1 DESC
+
+
 SELECT customer_id,
 (
-    SELECT count(1)
-    FROM rental
-    WHERE EXTRACT(DAY FROM COALESCE(return_date,NOW()) - rental_date) < 5
-    AND rental.customer_id = customer.customer_id
+SELECT count(1)
+FROM rental
+WHERE  EXTRACT(DAY FROM (COALESCE(return_date,NOW()) - rental_date)) < 5
+AND customer.customer_id = rental.customer_id
 ) as mene5,
 (
-    SELECT count(1)
-    FROM rental
-    WHERE EXTRACT(DAY FROM COALESCE(return_date,NOW()) - rental_date) < 7
-    AND rental.customer_id = customer.customer_id
+SELECT count(1)
+FROM rental
+WHERE  EXTRACT(DAY FROM (COALESCE(return_date,NOW()) - rental_date)) < 7
+AND customer.customer_id = rental.customer_id
 ) as mene7
-FROM customer
+FROM customer;
+
 
 SELECT count(1)
 FROM rental
-GROUP BY EXTRACT(DAY FROM COALESCE(return_date,NOW()) - rental_date) 
-
---WHERE return_date is null;
-
-
-*/
-
-
-
-
-
-
+WHERE  EXTRACT(DAY FROM (COALESCE(return_date,NOW()) - rental_date)) < 5;
 
 
 
@@ -119,7 +120,21 @@ GROUP BY EXTRACT(DAY FROM COALESCE(return_date,NOW()) - rental_date)
 
 
 
-
+SELECT T.*, customer.email FROM 
+(
+SELECT customer_id, count(1)
+FROM payment
+WHERE customer_id IN 
+(
+    SELECT customer_id 
+    FROM rental
+    JOIN inventory ON inventory.inventory_id = rental.inventory_id
+    JOIN film ON film.film_id = inventory.film_id
+    WHERE length>=185
+)
+GROUP BY customer_id
+HAVING count(1) > 5 
+) T JOIN customer ON T.customer_id = customer.customer_id;
 
 
 
@@ -404,38 +419,52 @@ GROUP BY EXTRACT(DAY FROM COALESCE(return_date,NOW()) - rental_date)
 
 
 
+SELECT rating, title, length FROM film F1
+WHERE length = (
 
+    SELECT MAX(F2.length) FROM film F2
+    WHERE F1.rating = F2.rating
 
-
-
-
-
-SELECT film.film_id, title
-FROM film
-WHERE film.length = (SELECT MAX(length) FROM film);
+)
+ORDER BY 1,2
+;
 
 
 SELECT customer_id, SUM(amount) as trzba
 FROM payment
-GROUP BY customer_id
-HAVING SUM(amount) = 
+GROUP BY  customer_id
+HAVING SUM(amount) =
 (
-    SELECT MAX(trzba) FROM
+    SELECT MAX(trzba)
+    FROM
     (
     SELECT customer_id, SUM(amount) as trzba
     FROM payment
-    GROUP BY customer_id
-    )T
+    GROUP BY  customer_id
+    )X
 );
 
-WITH T AS(
-SELECT customer_id, SUM(amount) as trzba
+WITH T AS 
+(
+    SELECT customer_id, SUM(amount) as trzba
     FROM payment
-    GROUP BY customer_id
+    GROUP BY  customer_id
 )
 SELECT * FROM T
-WHERE T.trzba = (SELECT MAX(trzba) FROM T)
+WHERE T.trzba = (SELECT MAX(trzba) FROM T);
 
-
-
-;
+SELECT
+    pid,
+    usename AS user_name,
+    datname AS database_name,
+    application_name,
+    client_addr,
+    state,
+    wait_event_type,
+    wait_event,
+    query_start,
+    clock_timestamp() - query_start AS query_duration,
+    query
+FROM pg_stat_activity
+WHERE pid <> pg_backend_pid()
+ORDER BY query_start NULLS LAST, pid;

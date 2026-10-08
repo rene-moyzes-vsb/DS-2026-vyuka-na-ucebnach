@@ -13,9 +13,21 @@
 --           skalarni poddotazy v SELECT.
 -- ============================================================
 
+/*
+SELECT  film_id,
+    (
+        SELECT count(1)
+        FROM film_actor
+        WHERE film_actor.film_id = film.film_id
+    ) as pocet_hercu,
+    (
+        SELECT count(1)
+        FROM film_category
+        WHERE film_category.film_id = film.film_id
+    ) as pocat_kategorii
+FROM film;
 
-
-
+*/
 
 
 
@@ -51,9 +63,33 @@
 --           Podminku na dobu trvani dejte dovnitr poddotazu, ne
 --           do vnejsiho WHERE.
 -- ============================================================
+/*
+SELECT customer_id, 
+(
 
+    SELECT count(1)
+    FROM rental
+    WHERE 
+    EXTRACT(DAY FROM (COALESCE(return_date,NOW()) - rental_date)) < 5
+    AND
+    rental.customer_id=customer.customer_id
 
+) as mene5,
+(
+    SELECT count(1)
+    FROM rental
+    WHERE 
+    EXTRACT(DAY FROM (COALESCE(return_date,NOW()) - rental_date)) < 7
+    AND
+    rental.customer_id=customer.customer_id
+) as mene7
+FROM customer;
 
+SELECT count(1)
+FROM rental
+WHERE 
+EXTRACT(DAY FROM (COALESCE(return_date,NOW()) - rental_date)) < 5;
+*/
 
 
 
@@ -91,9 +127,23 @@
 -- ============================================================
 
 
-
-
-
+SELECT * FROM 
+(
+SELECT customer_id
+FROM payment
+WHERE EXTRACT(MONTH FROM payment_date)=6
+GROUP BY customer_id
+HAVING COUNT(1)>5
+) T
+WHERE EXISTS
+  (
+    SELECT 1
+    FROM film F
+    JOIN inventory I  ON F.film_id=I.film_id
+    JOIN rental R ON I.inventory_id = R.inventory_id
+    WHERE F.length > 185 AND T.customer_id = R.customer_id
+  )
+;
 
 
 
@@ -362,10 +412,34 @@
 
 
 
+SELECT rating,title,length 
+FROM film F
+WHERE length = (SELECT MAX(length) FROM film 
+    WHERE F.rating=film.rating
+    )
+ORDER BY rating, title 
 
 
+SELECT customer_id, SUM(amount) trzba
+FROM payment
+GROUP BY customer_id
+HAVING SUM(amount) = 
+(
+    SELECT MAX(trzba)
+    FROM
+    (
+    SELECT customer_id, SUM(amount) trzba
+    FROM payment
+    GROUP BY customer_id
+    ) T
+);
 
-
+WITH T AS
+( SELECT customer_id, SUM(amount) trzba
+    FROM payment
+    GROUP BY customer_id)
+SELECT * FROM T
+WHERE T.trzba = (SELECT MAX(trzba) FROM T);
 
 
 

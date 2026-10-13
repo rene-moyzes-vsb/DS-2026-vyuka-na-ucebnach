@@ -1,6 +1,6 @@
 # LEGO databáze – průvodce pro studenty
 
-Tento dokument představuje databázi LEGO uloženou ve schématu `lego`. Je určený čtenářům, kteří znají základní pojmy jako tabulka, řádek a sloupec, ale s relačními databázemi teprve začínají.
+Tento dokument představuje databázi LEGO uloženou ve schématu `lego`.
 
 Databáze obsahuje informace o LEGO dílcích, barvách, sadách, minifigurkách a o tom, co se nachází v jednotlivých inventářích. Nejde o jednu velkou tabulku: údaje jsou rozdělené do menších tabulek a propojené pomocí klíčů.
 
@@ -100,7 +100,94 @@ Proto zde přímý cizí klíč není. Jeho přidání by selhalo při kontrole 
 - `themes.parent_id` → `themes.id`
 - Téma tedy může mít nadřazené téma. Jde o příklad vazby tabulky na sebe samu.
 
-## 5. Ukázkové dotazy
+## 5. Příklad: jak je v databázi uložen set Millennium Falcon
+
+Podíváme se na skutečný set `10179-1`, pojmenovaný **Millennium Falcon**. Je to dobrý příklad, protože databáze ukládá obecné údaje o sadě zvlášť od podrobného seznamu jejího obsahu.
+
+### Základní údaje o sadě
+
+V tabulce `sets` je jeden řádek pro tento set:
+
+| Sloupec | Hodnota | Význam |
+|---|---|---|
+| `set_num` | `10179-1` | Jedinečný identifikátor sady a primární klíč |
+| `name` | Millennium Falcon | Název sady |
+| `year` | `2007` | Rok vydání uvedený v katalogu |
+| `num_parts` | `5198` | Počet dílků evidovaný v katalogu |
+| `theme_id` | `171` | Odkaz na téma v tabulce `themes` |
+
+Řádek s `theme_id = 171` se spojí s `themes.id = 171`; název tématu je **Ultimate Collector Series**. Téma se neukládá znovu textem u každé sady — sada uchovává jeho ID a cizí klíč odkazuje na příslušný řádek.
+
+### Inventář konkrétní verze
+
+Podrobné složení je navázáno přes tabulku `inventories`. Pro tuto sadu je v databázi inventář `id = 6409`, `set_num = 10179-1`, `version = 1`. Tabulka `sets` tedy říká, **která sada existuje**, a `inventories` určuje, **kterou verzi jejího obsahu** právě popisujeme.
+
+### Jak databáze popisuje dílky
+
+Každý řádek v `inventory_parts` spojuje inventář, dílek a barvu a ukládá počet kusů. Například skutečný řádek pro tuto sadu je:
+
+| `inventory_id` | `part_num` | `color_id` | `is_spare` | `quantity` |
+|---:|---|---:|---|---:|
+| 6409 | `3021` | 71 | `false` | 243 |
+
+Samotný řádek neobsahuje texty „Plate 2 x 3“ ani „Light Bluish Gray“. Ty se získají přes klíče:
+
+- `part_num = 3021` odkazuje do `parts`, kde je název **Plate 2 x 3**;
+- `color_id = 71` odkazuje do `colors`, kde je barva **Light Bluish Gray**;
+- `is_spare = false` znamená, že nejde o náhradní dílek;
+- `quantity = 243` říká, že inventář obsahuje 243 takových kusů.
+
+V inventáři této verze je 281 řádků s kombinací dílku, barvy a příznaku náhradního dílku, které pokrývají 231 různých čísel dílků. Součet `quantity` je 5 200 kusů, z toho 21 náhradních. Číslo `sets.num_parts` je samostatný katalogový údaj; nemusí se přesně rovnat součtu obsahu inventáře, protože jde o údaje z různých polí a evidencí.
+
+### Minifigurky
+
+Minifigurky nejsou zapsané jako běžné dílky. Propojuje je tabulka `inventory_minifigs`, která obsahuje ID inventáře, identifikátor minifigurky a její množství. Inventář `6409` uvádí pět minifigurek, po jedné od každé: Han Solo (`fig-003817`), Chewbacca (`fig-000124`), Luke Skywalker (`fig-003952`), Obi-Wan Kenobi (`fig-003953`) a Princess Leia (`fig-002688`). Jejich podrobné názvy jsou v tabulce `minifigs`.
+
+### Cesta mezi tabulkami
+
+```text
+sets (set_num = 10179-1)
+  └─ inventories (id = 6409, version = 1)
+       ├─ inventory_parts ── parts (např. dílek 3021)
+       │                  └─ colors (např. barva 71)
+       └─ inventory_minifigs ── minifigs (např. fig-003817)
+```
+
+### SQL, které ukáže obsah inventáře
+
+Následující dotaz spojí řádky z inventáře s názvy dílků a barev. Výsledek tedy ukazuje čitelný popis, i když tabulka `inventory_parts` ukládá hlavně jejich identifikátory.
+
+```sql
+SELECT
+    ip.part_num,
+    p.name AS part_name,
+    c.name AS color_name,
+    ip.quantity,
+    ip.is_spare
+FROM lego.inventory_parts AS ip
+JOIN lego.parts AS p
+    ON p.part_num = ip.part_num
+JOIN lego.colors AS c
+    ON c.id = ip.color_id
+WHERE ip.inventory_id = 6409
+ORDER BY ip.is_spare, ip.quantity DESC
+LIMIT 10;
+```
+
+Podobně lze zobrazit minifigurky daného inventáře:
+
+```sql
+SELECT
+    f.fig_num,
+    f.name,
+    im.quantity
+FROM lego.inventory_minifigs AS im
+JOIN lego.minifigs AS f
+    ON f.fig_num = im.fig_num
+WHERE im.inventory_id = 6409;
+```
+
+## 6. Ukázkové dotazy
 
 Před názvy tabulek používáme `lego.`, aby bylo jasné, že tabulky patří do schématu `lego`.
 
@@ -161,7 +248,7 @@ ORDER BY p.name, c.name;
 
 Pokud dotaz nic nevrátí, číslo inventáře `1` v databázi nemusí být dostupné; zkuste jiné `inventory_id`.
 
-## 6. Na co si dát pozor
+## 7. Na co si dát pozor
 
 1. **Sada, dílek a inventář jsou různé věci.** `sets` je katalog sad, zatímco `inventories` popisuje jejich konkrétní inventáře a verze.
 2. **Počty kusů jsou v tabulkách obsahu.** Například počet dílků v inventáři je v `inventory_parts.quantity`, nikoli v samotné tabulce `parts`.
@@ -169,7 +256,7 @@ Pokud dotaz nic nevrátí, číslo inventáře `1` v databázi nemusí být dost
 4. **Ne každé propojení, které vypadá logicky, je databázovým cizím klíčem.** Diagram zobrazuje skutečné omezení `FOREIGN KEY`, ne jen podobně pojmenované sloupce.
 5. **Schéma `lego` je jmenný prostor.** Tabulka se v SQL dá zapsat jako `lego.parts`. Díky tomu se odliší od případné tabulky `parts` v jiném schématu.
 
-## 7. Velikost načtených dat
+## 8. Velikost načtených dat
 
 Při kontrole po importu měly hlavní tabulky přibližně tyto počty řádků:
 

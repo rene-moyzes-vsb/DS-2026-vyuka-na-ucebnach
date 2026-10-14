@@ -27,7 +27,7 @@
 -- JOIN inventory_parts AS IP on IP.inventory_id = I.id
 -- WHERE year = '2015' AND IP.is_spare = FALSE
 -- GROUP BY S.set_num HAVING COUNT(DISTINCT IP.part_num) > 50;
-
+/*
 SELECT IM.fig_num, M.name, COUNT(I.set_num) as pocet_stavebnic, MAX(pocet_2.pocet_dilku) as pocet_max_dilku
 FROM inventory_minifigs AS IM
 JOIN inventories AS I ON I.id = IM.inventory_id AND I.version = 1
@@ -43,19 +43,9 @@ JOIN (
 ) as pocet_2 ON I.set_num = pocet_2.set_num
 GROUP BY IM.fig_num, M.name HAVING COUNT(I.set_num) >= 4
 ORDER BY M.name ASC; 
-
+*/
  
-
-
-
-
-
-
-
-
- 
- 
- */ -- Náhled výsledku: celkem 8 řádků; zobrazeno prvních 5.
+ -- Náhled výsledku: celkem 8 řádků; zobrazeno prvních 5.
 -- | fig_num | minifigurka | pocet_stavebnic | nejvice_druhu_dilku |
 -- | fig-003414 | Batman, Dark Bluish Gray Suit, Black Cape and Cowl, Light Nougat Head, Dark Bluish Gray Hips, Muscles Outline | 6 | 79 |
 -- | fig-002330 | Battle Droid, One Bent Arm, One Straight Arm | 4 | 137 |
@@ -63,19 +53,82 @@ ORDER BY M.name ASC;
 -- | fig-007884 | Criminal, Woman, Prison Shirt, Sand Blue Legs, Dark Orange Hair | 4 | 177 |
 -- | fig-003415 | Gandalf (Dimensions) | 6 | 79 |
   -- Ukázková úloha 2
+
+
+
 -- Představte si, že vybíráte dárek pro fanouška Bionicle. Najděte stavebnice
 -- z tohoto tématu vydané v letech 2006 až 2010, jejichž katalogový počet dílků
 -- je vyšší než průměrný počet dílků v tématu, ale nižší než nejvyšší počet
 -- dílků v tématu. Průměr a maximum počítejte ze všech stavebnic daného tématu,
 -- nejen z uvedených let. Vypište číslo stavebnice, její název, rok vydání
 -- a katalogový počet dílků v tomto pořadí.
+
 -- Výsledek seřaďte sestupně podle katalogového počtu dílků a potom vzestupně
 -- podle čísla stavebnice.
+
 -- HINT: Rozlišujte dvě různá omezení. Rok 2006 až 2010 vybírá stavebnice,
 -- které se objeví ve výsledku, zatímco průměr a maximum se počítají ze všech
 -- stavebnic tématu. Proto do poddotazů s AVG a MAX nikdy nepište podmínku
 -- na rok; ta patří pouze do vnějšího dotazu. Oba poddotazy korelujte přes
 -- theme_id vnější stavebnice, aby se počítaly v rámci jejího tématu.
+
+
+WITH T AS (
+SELECT S.set_num, sum(IP.quantity) AS pocet_dilku
+FROM sets S
+JOIN inventories I ON S.set_num = I.set_num
+JOIN inventory_parts IP ON I.id = IP.inventory_id
+WHERE S.theme_id IN
+(
+SELECT t2.id
+FROM themes t1
+JOIN themes t2 ON t1.id = t2.parent_id
+WHERE t1.name = 'Bionicle'
+)
+GROUP BY S.set_num
+) 
+SELECT S.set_num,S.name,T.pocet_dilku,S.year
+FROM sets S
+JOIN T ON S.set_num=T.set_num
+WHERE
+  T.pocet_dilku>
+  (
+    SELECT AVG(pocet_dilku)
+    FROM T
+  )
+  AND 
+  T.pocet_dilku<
+  (
+    SELECT MAX(pocet_dilku)
+    FROM T
+  )
+  AND
+  S.year BETWEEN 2006 AND 2010
+ORDER BY pocet_dilku DESC, set_num ASC;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -86,6 +139,9 @@ ORDER BY M.name ASC;
 -- | 8995-1 | Thornatus V9 | 2009 | 438 |
 -- | 8942-1 | Jetrax T6 | 2008 | 419 |
 -- | 8942-2 | Jetrax T6 Limited Edition | 2008 | 419 |
+
+
+
  -- Ukázková úloha 3
 -- Marketing zkoumá, které minifigurky táhly jednotlivá témata v roce 2007.
 -- Pro každé téma a minifigurku spočítejte, v kolika různých stavebnicích

@@ -176,6 +176,30 @@ Dvojici můžete porovnat podle fotografií v [katalogu Rebrickable](https://reb
 - `inventory_minifigs` propojuje inventáře s katalogem `minifigs` a ukládá množství.
 - `inventory_sets` propojuje inventáře s katalogem `sets` a ukládá množství.
 
+#### Proč je `set_num` v `inventories` i v `inventory_sets`?
+
+Sloupce mají odlišný význam:
+
+- `inventories.set_num` označuje sadu, **jejíž obsah inventář popisuje**. Jedna sada může mít více inventářů, například různé verze. U minifigurek obsahuje tento sloupec místo čísla sady hodnotu `fig_num`.
+- `inventory_sets.set_num` označuje sadu, která je **obsažena uvnitř** inventáře uvedeného v `inventory_sets.inventory_id`. Sloupec `quantity` udává počet takto obsažených sad.
+
+Proto pro součet dílků samotné sady vedeme cestu přes `inventories` a `inventory_parts`:
+
+```sql
+SELECT
+    s.set_num,
+    i.id AS inventory_id,
+    SUM(ip.quantity) AS piece_count
+FROM lego.sets AS s
+JOIN lego.inventories AS i
+    ON i.set_num = s.set_num
+JOIN lego.inventory_parts AS ip
+    ON ip.inventory_id = i.id
+GROUP BY s.set_num, i.id;
+```
+
+`inventory_sets` použijeme naopak, když hledáme celé sady vložené do inventáře. V takovém spojení je `inventory_sets.set_num` číslem **vložené** sady a `inventory_sets.quantity` jejím množstvím; není to spojení inventáře s jeho vlastní sadou.
+
 ### Témata
 
 - `sets.theme_id` → `themes.id`

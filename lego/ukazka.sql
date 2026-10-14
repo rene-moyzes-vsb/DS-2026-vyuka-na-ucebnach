@@ -18,33 +18,11 @@
 -- napojte minifigurky. Stavebnice počítejte přes různá set_num, protože
 -- jedna stavebnice může mít více verzí inventáře. Práh čtyř stavebnic
 -- je podmínka nad agregací, patří tedy do HAVING.
- /*select fig_num,
-       fig_name,
-       count(set_id) as sets_count,
-       max(pocet_part_na_inventory) as max_pocet_part_na_inventory
-from
-    (SELECT distinct s.set_num as set_id,
-                     im.fig_num as fig_num,
-                     m.name as fig_name,
-                     pocet_part_na_inventory
-     FROM inventories i
-     INNER JOIN
-     sets s ON i.set_num = s.set_num
-     INNER JOIN inventory_minifigs im ON i.id = im.inventory_id
-     INNER JOIN minifigs m ON m.fig_num = im.fig_num
-     INNER JOIN
-         (SELECT i.id,
-                 count(DISTINCT ip.part_num) as pocet_part_na_inventory
-          FROM inventories i
-          JOIN inventory_parts ip ON ip.inventory_id = i.id
-          WHERE ip.is_spare = FALSE
-          GROUP BY i.id
-          HAVING COUNT(DISTINCT ip.part_num) >= 50) as pocet_part ON i.id = pocet_part.id
-     WHERE s.year = 2015)
-group by fig_num,
-         fig_name
-having count(set_id) >= 4
-order by max_pocet_part_na_inventory desc;*/ -- Náhled výsledku: celkem 8 řádků; zobrazeno prvních 5.
+ 
+ 
+ 
+ 
+ */ -- Náhled výsledku: celkem 8 řádků; zobrazeno prvních 5.
 -- | fig_num | minifigurka | pocet_stavebnic | nejvice_druhu_dilku |
 -- | fig-003414 | Batman, Dark Bluish Gray Suit, Black Cape and Cowl, Light Nougat Head, Dark Bluish Gray Hips, Muscles Outline | 6 | 79 |
 -- | fig-002330 | Battle Droid, One Bent Arm, One Straight Arm | 4 | 137 |
@@ -66,29 +44,7 @@ order by max_pocet_part_na_inventory desc;*/ -- Náhled výsledku: celkem 8 řá
 -- na rok; ta patří pouze do vnějšího dotazu. Oba poddotazy korelujte přes
 -- theme_id vnější stavebnice, aby se počítaly v rámci jejího tématu.
 
-select sub_themes.id
-from themes
-left join themes sub_themes ON sub_themes.parent_id = themes.id
-where themes.name ILIKE 'BIONICLE';
 
-
-select sets.set_num, sets.theme_id,
-inventory_parts.quantity
-    --    sum(inventory_parts.quantity /* inventory_sets.quantity */) as pocet_dilku_na_stavebnici
-from sets
-inner join inventory_sets on inventory_sets.set_num = sets.set_num
-inner join inventories on inventories.id = inventory_sets.inventory_id
-left join inventory_parts ON inventory_parts.inventory_id = inventories.id
-where sets.theme_id IN
-        (select sub_themes.id
-         from themes
-         left join themes sub_themes ON sub_themes.parent_id = themes.id
-         where themes.name ILIKE 'BIONICLE')
--- group by sets.set_num;
-
-select *
-from sets
-where sets.theme_id = 341;
 
 -- Náhled výsledku: celkem 38 řádků; zobrazeno prvních 5.
 -- | set_num | name | year | num_parts |

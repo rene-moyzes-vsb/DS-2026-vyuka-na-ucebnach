@@ -10,8 +10,7 @@
 -- obsažené alespoň ve čtyřech takových stavebnicích. Vypište číslo
 -- minifigurky, její název, počet stavebnic a nejvyšší počet druhů
 -- dílků v tomto pořadí.
-
--- Výsledek seřaďte vzestupně podle názvu minifigurky.
+ -- Výsledek seřaďte vzestupně podle názvu minifigurky.
  -- HINT: Postupujte od stavebnic k minifigurkám, ne naopak. Nejprve omezte
 -- inventáře na stavebnice z roku 2015 a u každého inventáře ověřte podmínku
 -- na více než 50 různých čísel běžných dílků; tato podmínka je agregační,
@@ -19,32 +18,38 @@
 -- napojte minifigurky. Stavebnice počítejte přes různá set_num, protože
 -- jedna stavebnice může mít více verzí inventáře. Práh čtyř stavebnic
 -- je podmínka nad agregací, patří tedy do HAVING.
- 
-SELECT s.set_num
+/*
+SELECT s.set_num, COUNT(DISTINCT ip.part_num)
 FROM
 sets s JOIN inventories i ON s.set_num = i.set_num JOIN inventory_parts ip ON ip.inventory_id = i.id
 WHERE s.YEAR = 2015 AND ip.is_spare = FALSE
 GROUP BY s.set_num, i.version
 HAVING COUNT(DISTINCT ip.part_num) > 50
-LIMIT 1000;
-
-SELECT minifigs.fig_num, minifigs.name, COUNT(DISTINCT i.set_num)
-FROM sets s JOIN inventories i ON s.set_num = i.set_num
+LIMIT 1000;*/ /*
+SELECT minifigs.fig_num, minifigs.name, COUNT(DISTINCT i.set_num), MAX(s.parts_count)
+FROM (
+  SELECT s.set_num, COUNT(DISTINCT ip.part_num) as parts_count
+  FROM
+  sets s JOIN inventories i ON s.set_num = i.set_num JOIN inventory_parts ip ON ip.inventory_id = i.id
+  WHERE s.YEAR = 2015 AND ip.is_spare = FALSE
+  GROUP BY s.set_num, i.version
+  HAVING COUNT(DISTINCT ip.part_num) > 50
+  LIMIT 1000) s
+JOIN inventories i ON s.set_num = i.set_num
 JOIN inventory_minifigs ON inventory_minifigs.inventory_id = i.id
 JOIN minifigs ON minifigs.fig_num = inventory_minifigs.fig_num
 GROUP BY minifigs.fig_num
 HAVING COUNT(DISTINCT i.set_num) >= 4
-
- 
- */ -- Náhled výsledku: celkem 8 řádků; zobrazeno prvních 5.
+ORDER BY minifigs.name ASC
+*/ */ -- Náhled výsledku: celkem 8 řádků; zobrazeno prvních 5.
 -- | fig_num | minifigurka | pocet_stavebnic | nejvice_druhu_dilku |
 -- | fig-003414 | Batman, Dark Bluish Gray Suit, Black Cape and Cowl, Light Nougat Head, Dark Bluish Gray Hips, Muscles Outline | 6 | 79 |
 -- | fig-002330 | Battle Droid, One Bent Arm, One Straight Arm | 4 | 137 |
 -- | fig-002711 | Cole in Deepstone Shoulder Armor (Possession) | 4 | 325 |
 -- | fig-007884 | Criminal, Woman, Prison Shirt, Sand Blue Legs, Dark Orange Hair | 4 | 177 |
 -- | fig-003415 | Gandalf (Dimensions) | 6 | 79 |
-  -- Ukázková úloha 2
--- Představte si, že vybíráte dárek pro fanouška Bionicle. Najděte stavebnice
+ -- Ukázková úloha 2
+ -- Představte si, že vybíráte dárek pro fanouška Bionicle. Najděte stavebnice
 -- z tohoto tématu vydané v letech 2006 až 2010, jejichž katalogový počet dílků
 -- je vyšší než průměrný počet dílků v tématu, ale nižší než nejvyšší počet
 -- dílků v tématu. Průměr a maximum počítejte ze všech stavebnic daného tématu,
@@ -52,13 +57,39 @@ HAVING COUNT(DISTINCT i.set_num) >= 4
 -- a katalogový počet dílků v tomto pořadí.
 -- Výsledek seřaďte sestupně podle katalogového počtu dílků a potom vzestupně
 -- podle čísla stavebnice.
--- HINT: Rozlišujte dvě různá omezení. Rok 2006 až 2010 vybírá stavebnice,
+ -- HINT: Rozlišujte dvě různá omezení. Rok 2006 až 2010 vybírá stavebnice,
 -- které se objeví ve výsledku, zatímco průměr a maximum se počítají ze všech
 -- stavebnic tématu. Proto do poddotazů s AVG a MAX nikdy nepište podmínku
 -- na rok; ta patří pouze do vnějšího dotazu. Oba poddotazy korelujte přes
 -- theme_id vnější stavebnice, aby se počítaly v rámci jejího tématu.
+ WITH Pocty AS
+  (select inventories.set_num,
+          SUM(inventory_parts.quantity) as pocet_dilku
+   from inventory_parts
+   JOIN inventories ON inventories.id = inventory_parts.inventory_id
+   JOIN
+   sets ON inventories.set_num = sets.set_num
+   WHERE sets.theme_id IN
+       (SELECT L2.id
+        FROM themes L1
+        JOIN themes L2 ON L1.id = L2.parent_id
+        WHERE L1.name = 'Bionicle'
+        UNION SELECT L2.id
+        FROM themes L1
+        JOIN themes L2 ON L1.id = L2.id
+        WHERE L1.name = 'Bionicle')
+   GROUP BY inventories.set_num,
+            inventories.version)
 
 
+select sets.set_num, sets.name, MAX(Pocty.pocet_dilku) as pocet_dilku
+from
+sets JOIN Pocty ON sets.set_num = Pocty.set_num
+where sets.YEAR Between 2006 AND 2010
+AND Pocty.pocet_dilku > (select AVG(Pocty.pocet_dilku) from Pocty)
+AND Pocty.pocet_dilku < (select MAX(Pocty.pocet_dilku) from Pocty)
+Group BY sets.set_num, sets.name
+ORDER BY pocet_dilku DESC;
 
 -- Náhled výsledku: celkem 38 řádků; zobrazeno prvních 5.
 -- | set_num | name | year | num_parts |

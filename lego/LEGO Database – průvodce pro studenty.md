@@ -47,6 +47,8 @@ Názvy nejsou jedinečné: sady `10179-1` a `4488-1` se obě jmenují `Millenniu
 
 V `inventory_parts` může být stejný dílek ve stejné barvě evidován jako běžný i rezervní, proto je `is_spare` součástí primárního klíče. Rezervní kus (*spare*) je přibalený navíc; není to alternativní typ dílku z `part_relationships`.
 
+**Tabulku `inventory_sets` ve výuce ignorujeme.** Popisuje, které sady (krabice) mohou být součástí jiných sad, tedy vnořování sad do sad. Řešení takto vnořeného obsahu by do cvičení přineslo složitost, kterou v tomto kurzu řešit nechceme. Dále v textu proto tuto tabulku i její vazby zmiňujeme jen informativně, aby bylo jasné, proč se v diagramu ani v dotazech neobjevuje.
+
 ## 3. Jak jsou tabulky propojené
 
 ```mermaid
@@ -63,8 +65,7 @@ erDiagram
     colors ||--o{ inventory_parts : "má barvu"
     inventories ||--o{ inventory_minifigs : "obsahuje minifigurky"
     minifigs ||--o{ inventory_minifigs : "je v inventáři"
-    inventories ||--o{ inventory_sets : "obsahuje sadu"
-    sets ||--o{ inventory_sets : "je v inventáři"
+    sets ||--o{ inventories : "je v inventáři"
 ```
 
 Diagram ukazuje vazby vynucované cizími klíči. `||` znamená právě jeden záznam, `|o` na levém konci (nebo `o|` na pravém) žádný nebo jeden a `o{` na pravém konci žádný až mnoho záznamů. Plná čára označuje vazbu, jejíž cizí klíč je součástí primárního klíče navázané tabulky; přerušovaná čára vazbu, u níž tomu tak není.
@@ -80,7 +81,7 @@ Inventáře dohledáváme podle:
 - `inventories.set_num = sets.set_num` pro sady;
 - `inventories.set_num = minifigs.fig_num` pro minifigurky.
 
-`inventory_sets` naopak eviduje sady **uvnitř inventáře**, nikoli sadu, které inventář patří. Inventář `35` například patří sadě `5004559-1` a obsahuje po jednom kusu sad `75911-1` a `75912-1`.
+`inventory_sets` naopak eviduje sady **uvnitř inventáře**, nikoli sadu, které inventář patří. Inventář `35` například patří sadě `5004559-1` a obsahuje po jednom kusu sad `75911-1` a `75912-1`. Tuto tabulku i vazbu ale ve výuce ignorujeme (viz kapitola 2) — proto se v ER diagramu výše neobjevuje.
 
 ## 4. Důležité vazby podrobněji
 
@@ -174,7 +175,7 @@ Dvojici můžete porovnat podle fotografií v [katalogu Rebrickable](https://reb
 ### Inventáře, sady a minifigurky
 
 - `inventory_minifigs` propojuje inventáře s katalogem `minifigs` a ukládá množství.
-- `inventory_sets` propojuje inventáře s katalogem `sets` a ukládá množství.
+- `inventory_sets` propojuje inventáře s katalogem `sets` a ukládá množství (sady vnořené v jiných sadách). Tuto tabulku ve výuce ignorujeme.
 
 ### Témata
 
@@ -184,7 +185,7 @@ Dvojici můžete porovnat podle fotografií v [katalogu Rebrickable](https://reb
 
 ### Jak vazby ovlivňují mazání
 
-- Tři vazby z tabulek obsahu na `inventories.id` mají `ON DELETE CASCADE`. Smazání inventáře tedy smaže jeho řádky v `inventory_parts`, `inventory_minifigs` a `inventory_sets`, nikoli samotné katalogové dílky, minifigurky nebo sady.
+- Tři vazby z tabulek obsahu na `inventories.id` mají `ON DELETE CASCADE`. Smazání inventáře tedy smaže jeho řádky v `inventory_parts`, `inventory_minifigs` a `inventory_sets` (tu ale ve výuce ignorujeme), nikoli samotné katalogové dílky, minifigurky nebo sady.
 - `themes.parent_id` má `ON DELETE SET NULL`. Při smazání nadřazeného tématu se u jeho podtémat zruší odkaz na rodiče; podtémata se nemažou. Pokud na mazané téma odkazují sady přes `sets.theme_id`, tato jiná vazba může smazání zablokovat.
 - Ostatní cizí klíče používají výchozí `NO ACTION`: odkazovaný záznam nelze smazat, pokud by tím vznikl neplatný odkaz. Proto nelze například bez vyřešení navázaných řádků smazat používaný katalogový dílek.
 
@@ -286,7 +287,7 @@ ORDER BY im.fig_num, fi.version, fi.id;
 
 U Falconu tak dostáváme **5 179 běžných dílků + 19 součástí minifigurek = 5 198 katalogových dílků**. Rezervních 21 kusů se nezapočítává.
 
-`sets.num_parts` je uložený katalogový údaj, ne automaticky vypočítaný součet. U jiných sad je nutné zohlednit jejich verze inventářů, minifigurky a případné vnořené sady.
+`sets.num_parts` je uložený katalogový údaj, ne automaticky vypočítaný součet. U jiných sad je nutné zohlednit jejich verze inventářů a minifigurky; případné vnořené sady (`inventory_sets`) ve výuce ignorujeme.
 
 ### Cesta mezi tabulkami
 
@@ -390,13 +391,15 @@ WHERE i.id = 1
 ORDER BY p.name, c.name, ip.part_num, ip.color_id, ip.is_spare;
 ```
 
-Inventář bez řádků v `inventory_parts` může mít obsah v `inventory_sets` nebo `inventory_minifigs`.
+Inventář bez řádků v `inventory_parts` může mít obsah v `inventory_minifigs`, případně v `inventory_sets`, kterou ve výuce ignorujeme.
 
 ## 7. Na co si dát pozor
 
 - **Textové identifikátory:** `part_num`, `set_num`, `fig_num` i `element_id` jsou text, i když některé obsahují pouze číslice. Zachovejte počáteční nuly.
+- **Jedna sada může mít více verzí inventáře:** `inventories` eviduje ke stejnému `set_num` i několik řádků s různým `version` (např. při reedici sady se změněným obsahem). Při zjišťování nebo součtu obsahu sady proto vždy vyberte konkrétní `inventory_id`, jinak se obsah započítá vícekrát. **Na tohle si dejte pozor hlavně u testu.** Tím se ruší dříve na cvičeních oznámené pravidlo, že se pracuje jen s `version = 1`: toto pravidlo bylo při přípravě testů změněno a zadání testu nyní práci s verzí popisuje výslovně.
 - **Součty po spojení tabulek:** spojení dílků s minifigurkami nebo více verzemi inventáře může násobit řádky a zkreslit součet `quantity`.
 - **Rozsah omezení:** DDL nevynucuje šest kódů `rel_type`, kladné `quantity` ani jedinečnost dvojice `(set_num, version)`. Hierarchii témat také nechrání před cykly.
+- **`inventory_sets` ignorujeme:** tabulka popisuje sady vnořené v jiných sadách (jedna krabice uvnitř druhé). Tuto složitost ve cvičeních neřešíme, proto se v diagramu ani v ukázkových dotazech nevyskytuje.
 
 ### Chybný součet po spojení dvou seznamů
 
@@ -465,4 +468,4 @@ Počty řádků v databázi `MOY001` k **13. 10. 2026**:
 | `inventories` | 47 338 |
 | `inventory_parts` | 1 556 893 |
 | `inventory_minifigs` | 25 809 |
-| `inventory_sets` | 5 210 |
+| `inventory_sets` | 5 210 — ve výuce ignorujeme |

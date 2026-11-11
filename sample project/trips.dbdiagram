@@ -1,0 +1,58 @@
+{
+  "version": "3.0.0",
+  "darkMode": true,
+  "gridEnabling": false,
+  "currentViewName": null,
+  "defaultView": {
+    "detailLevel": "All",
+    "relationshipMode": "All",
+    "tablePositions": [
+      {
+        "name": "members",
+        "schemaName": "trips",
+        "x": 31.439395544663917,
+        "y": -318.4697242592865
+      },
+      {
+        "name": "trips",
+        "schemaName": "trips",
+        "x": 12,
+        "y": 250
+      },
+      {
+        "name": "participants",
+        "schemaName": "trips",
+        "x": 556.7016745513341,
+        "y": -162.95455990197513
+      },
+      {
+        "name": "services",
+        "schemaName": "trips",
+        "x": 12,
+        "y": 488
+      },
+      {
+        "name": "expenses",
+        "schemaName": "trips",
+        "x": 561.5615234375,
+        "y": 250
+      },
+      {
+        "name": "expense_shares",
+        "schemaName": "trips",
+        "x": 1065.587890625,
+        "y": 250
+      },
+      {
+        "name": "payments",
+        "schemaName": "trips",
+        "x": 1065.587890625,
+        "y": 12
+      }
+    ],
+    "tableGroupCollapseStates": [],
+    "stickyNoteLayouts": [],
+    "referencePaths": []
+  },
+  "views": {}
+}

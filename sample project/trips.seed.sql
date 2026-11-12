@@ -1,3 +1,7 @@
+
+
+FOL0196
+
 INSERT INTO trips.members
     (member_id, first_name, last_name, registered_at, is_active)
 VALUES

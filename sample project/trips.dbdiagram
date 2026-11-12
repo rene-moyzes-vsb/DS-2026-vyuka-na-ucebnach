@@ -1,6 +1,6 @@
 {
   "version": "3.0.0",
-  "darkMode": true,
+  "darkMode": false,
   "gridEnabling": false,
   "currentViewName": null,
   "defaultView": {
@@ -52,7 +52,113 @@
     ],
     "tableGroupCollapseStates": [],
     "stickyNoteLayouts": [],
-    "referencePaths": []
+    "referencePaths": [
+      {
+        "firstFieldNames": [
+          "member_id"
+        ],
+        "firstTableName": "members",
+        "firstSchemaName": "trips",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "member_id"
+        ],
+        "secondTableName": "participants",
+        "secondSchemaName": "trips",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "trip_id"
+        ],
+        "firstTableName": "trips",
+        "firstSchemaName": "trips",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "trip_id"
+        ],
+        "secondTableName": "participants",
+        "secondSchemaName": "trips",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "service_id"
+        ],
+        "firstTableName": "services",
+        "firstSchemaName": "trips",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "service_id"
+        ],
+        "secondTableName": "expenses",
+        "secondSchemaName": "trips",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "trip_id"
+        ],
+        "firstTableName": "trips",
+        "firstSchemaName": "trips",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "trip_id"
+        ],
+        "secondTableName": "expenses",
+        "secondSchemaName": "trips",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "participant_id"
+        ],
+        "firstTableName": "participants",
+        "firstSchemaName": "trips",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "participant_id"
+        ],
+        "secondTableName": "expense_shares",
+        "secondSchemaName": "trips",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "expense_id"
+        ],
+        "firstTableName": "expenses",
+        "firstSchemaName": "trips",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "expense_id"
+        ],
+        "secondTableName": "expense_shares",
+        "secondSchemaName": "trips",
+        "secondRelation": "*",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "participant_id"
+        ],
+        "firstTableName": "participants",
+        "firstSchemaName": "trips",
+        "firstRelation": "1",
+        "secondFieldNames": [
+          "participant_id"
+        ],
+        "secondTableName": "payments",
+        "secondSchemaName": "trips",
+        "secondRelation": "*",
+        "checkPoints": []
+      }
+    ]
   },
   "views": {}
 }

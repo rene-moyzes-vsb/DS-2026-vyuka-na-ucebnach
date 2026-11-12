@@ -1,16 +1,26 @@
 -- Ukázková úloha 1
 -- Sběratel hledá minifigurky, které v roce 2015 doprovázely rozsáhlé
--- stavebnice. Za rozsáhlou považujte takovou verzi inventáře stavebnice
+-- stavebnice.
+
+-- Za rozsáhlou považujte takovou verzi inventáře stavebnice
 -- vydané v roce 2015, která obsahuje více než 50 různých druhů běžných
--- dílků. Druhy dílků počítejte podle čísla dílku bez ohledu na barvu
+-- dílků. 
+
+-- D ruhy dílků počítejte podle čísla dílku bez ohledu na barvu
 -- a počítejte pouze běžné dílky (is_spare = FALSE), nikoli náhradní dílky
--- (is_spare = TRUE). Pro každou minifigurku spočítejte, v kolika různých
+-- (is_spare = TRUE). 
+
+-- Pro každou minifigurku spočítejte, v kolika různých
 -- takových stavebnicích je obsažena. Stavebnici započítejte jen jednou, i když
 -- vyhovuje více jejích verzí inventáře. Ponechte pouze minifigurky
--- obsažené alespoň ve čtyřech takových stavebnicích. Vypište číslo
--- minifigurky, její název, počet stavebnic a nejvyšší počet druhů
+-- obsažené alespoň ve čtyřech takových stavebnicích.
+
+--Vypište číslo
+-- minifigurky, její název, počet stavebnic a počet druhů
 -- dílků v tomto pořadí.
+
 -- Výsledek seřaďte vzestupně podle názvu minifigurky.
+
  -- HINT: Postupujte od stavebnic k minifigurkám, ne naopak. Nejprve omezte
 -- inventáře na stavebnice z roku 2015 a u každého inventáře ověřte podmínku
 -- na více než 50 různých čísel běžných dílků; tato podmínka je agregační,
@@ -20,16 +30,39 @@
 -- je podmínka nad agregací, patří tedy do HAVING.
  
  
- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  
  */ -- Náhled výsledku: celkem 8 řádků; zobrazeno prvních 5.
--- | fig_num | minifigurka | pocet_stavebnic | nejvice_druhu_dilku |
+-- | fig_num | minifigurka | pocet_stavebnic | pocet_nebo_nejvice_druhu_dilku |
 -- | fig-003414 | Batman, Dark Bluish Gray Suit, Black Cape and Cowl, Light Nougat Head, Dark Bluish Gray Hips, Muscles Outline | 6 | 79 |
 -- | fig-002330 | Battle Droid, One Bent Arm, One Straight Arm | 4 | 137 |
 -- | fig-002711 | Cole in Deepstone Shoulder Armor (Possession) | 4 | 325 |
 -- | fig-007884 | Criminal, Woman, Prison Shirt, Sand Blue Legs, Dark Orange Hair | 4 | 177 |
 -- | fig-003415 | Gandalf (Dimensions) | 6 | 79 |
-  -- Ukázková úloha 2
+
+
+-- Ukázková úloha 2
 -- Představte si, že vybíráte dárek pro fanouška Bionicle. Najděte stavebnice
 -- z tohoto tématu vydané v letech 2006 až 2010, jejichž katalogový počet dílků
 -- je vyšší než průměrný počet dílků v tématu, ale nižší než nejvyšší počet
